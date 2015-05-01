@@ -22,14 +22,20 @@ along with this program. If not, see <http://www.gnu.org/licenses/agpl-3.0.html>
 #include <opencv2/core/core.hpp>
 #include "calibration.h"
 #include "tdogl/Texture.h"
+#include <unordered_map>
 
 typedef std::vector<glm::dvec2> IPts;
 typedef std::vector<glm::dvec3> WPts;
 typedef std::vector<cv::Vec6f> TriangleList;
+typedef std::pair<int, std::pair<cv::Vec3i, cv::Vec3i> > UniqueColorPair;
 
 class Recon
 {
 private:
+	cv::Rect validRoi_[2];
+	cv::Mat rmap_[2][2];
+
+	float yoffset_;
 	GLuint recon_vao;
 	GLuint recon_vbo[3];
 	Program* gProgram;
@@ -45,15 +51,22 @@ private:
 	void read_input_file(const std::string file_name, std::vector <glm::dvec2>& img_pts1, std::vector <glm::dvec2>& img_pts2);
 	void save_3D_pts(const WPts& pnts) const;
 	void traingulate_pts(const WPts& pnts, WPts& triangleList, std::vector<GLuint>& texture_ids, std::vector<glm::dvec2>& texture_coords, const cv::Mat& A, const cv::Mat& E);
-	void texturize_triangle(const WPts& triangle, const std::vector<cv::Point2f>& img_coords, std::vector<glm::dvec2>& texture_coords, GLuint& tex);
+	void texturize_triangle(const WPts& triangle, const std::vector<cv::Point2f>& img_coords, std::vector<glm::dvec2>& texture_coords, GLuint& tex, cv::Mat& image);
 	std::vector<cv::Mat> projection_matrices_;
+	std::vector<cv::Mat> rectification_matrices_;
 	std::vector<std::vector<cv::Point2f>> test_img_points_; 
 	std::vector<GLuint> texture_ids_; 
 	std::vector<glm::dvec2> texture_coords_;
 	GLuint backup_tex;
 	tdogl::Texture* gTex;
+	void rectify_images(std::vector<cv::Mat>& imgs_left);
+	void compute_correlation_per_image(std::unordered_map<int, std::unordered_map< int, std::vector<UniqueColorPair> > >& unique_colors_left,
+		std::unordered_map<int, std::unordered_map< int, std::vector<UniqueColorPair> > >& unique_colors_right,
+		std::vector <glm::dvec2>& img_pts1, std::vector <glm::dvec2>& img_pts2);
+	void init_imgs(std::vector<cv::Mat>& calibImgs, std::vector<std::string> img_filenames, std::string albedo_filename, bool is_left);
     
 public:
+	void compute_correlation(std::vector <glm::dvec2>& img_pts1, std::vector <glm::dvec2>& img_pts2);
 	inline void set_gprogram(Program* g_program) { gProgram = g_program; };
 	void calibrate();
 	void save_corr_pnts(const std::vector <glm::dvec2>& img_pts1, const std::vector <glm::dvec2> img_pts2, const int corr_no);

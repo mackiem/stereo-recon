@@ -90,24 +90,24 @@ static void LoadShaders() {
     glm::mat4 projection = glm::perspective<float>(45.0, SCREEN_SIZE.x/SCREEN_SIZE.y, 0.1, 10.0);
     //glm::mat4 projection = glm::ortho<float>(-2, 2, -2, 2, 0.1, 10);
     gProgram->setUniform("projection", projection);
-	invProj = projection._inverse();
+    invProj = projection._inverse();
 
     //set the "camera" uniform in the vertex shader, because it's also not going to change
-	center = glm::vec3(0,0,0);
+    center = glm::vec3(0,0,0);
     glm::mat4 camera = glm::lookAt(glm::vec3(0,0, 3.5f), glm::vec3(center), glm::vec3(0,1,0));
     gProgram->setUniform("camera", camera);
-	invCam = projection._inverse();
+    invCam = projection._inverse();
 
     // cross hairs
-	crossHairs = new CrossHairs(5, SCREEN_SIZE.x, SCREEN_SIZE.y, glm::vec3(0.f, 1.f, 0.f));
-	crossHairs->init(gProgram);
-	glLineWidth(3.f);
-	//crossHairs->detect_corners(1, SCREEN_SIZE.x, SCREEN_SIZE.y);
-	//crossHairs->detect_corners(2, SCREEN_SIZE.x, SCREEN_SIZE.y);
-	//crossHairs->detect_corners(3, SCREEN_SIZE.x, SCREEN_SIZE.y);
+    crossHairs = new CrossHairs(5, SCREEN_SIZE.x, SCREEN_SIZE.y, glm::vec3(0.f, 1.f, 0.f));
+    crossHairs->init(gProgram);
+    glLineWidth(3.f);
+    //crossHairs->detect_corners(1, SCREEN_SIZE.x, SCREEN_SIZE.y);
+    //crossHairs->detect_corners(2, SCREEN_SIZE.x, SCREEN_SIZE.y);
+    //crossHairs->detect_corners(3, SCREEN_SIZE.x, SCREEN_SIZE.y);
 
-	corr_cross_hairs = new CorrCrossHairs(5, SCREEN_SIZE.x, SCREEN_SIZE.y, glm::vec3(0.f, 1.f, 0.f), glm::vec3(0.f, 1.f, 1.f));
-	corr_cross_hairs->init(gProgram, invProj, invCam);
+    corr_cross_hairs = new CorrCrossHairs(5, SCREEN_SIZE.x, SCREEN_SIZE.y, glm::vec3(0.f, 1.f, 0.f), glm::vec3(0.f, 1.f, 1.f));
+    corr_cross_hairs->init(gProgram, invProj, invCam);
 
     gProgram->stopUsing();
 }
@@ -119,55 +119,55 @@ static int isCorr = 1;
 
 void GLFWCALL OnMousePress(int button, int action)  // your callback function called by GLFW when mouse has moved
 {
-	if (!TwEventMouseButtonGLFW(button, action)) {
-		if ((button == GLFW_MOUSE_BUTTON_LEFT) && (action == GLFW_PRESS)) {
+    if (!TwEventMouseButtonGLFW(button, action)) {
+        if ((button == GLFW_MOUSE_BUTTON_LEFT) && (action == GLFW_PRESS)) {
 
-			int x, y;
-			double w = SCREEN_SIZE.x;
-			double h = SCREEN_SIZE.y;
+            int x, y;
+            double w = SCREEN_SIZE.x;
+            double h = SCREEN_SIZE.y;
 
-			glfwGetMousePos(&x, &y);
-			double cX = x - (w / 2.0);
-			double iW = tan(22.5f * (double)PI / 180) * 0.1 * w / h;
-			double oW = (3.5f / 0.1) * iW;
-			double mX = oW * cX / (w / 2.0);
+            glfwGetMousePos(&x, &y);
+            double cX = x - (w / 2.0);
+            double iW = tan(22.5f * (double)PI / 180) * 0.1 * w / h;
+            double oW = (3.5f / 0.1) * iW;
+            double mX = oW * cX / (w / 2.0);
 
-			double cY = y - (h / 2.0);
-			double oY = oW * h / w;
-			double mY = oY * cY / (h / 2.0);
+            double cY = y - (h / 2.0);
+            double oY = oW * h / w;
+            double mY = oY * cY / (h / 2.0);
 
 
-			//float mX = (((float)2 * x) - w) / w;
-			//float mX = (0.1f + 3.5f) * x / 0.1f;
-			//   float mY = (0.1f + 3.5f) * y / 0.1f;
-			//mY = (((float)2 * mY) - h) / h;
-			if (isCorr == 0) {
-			    crossHairs->adjust(mX, -mY);
-			}
-			else {
-			    corr_cross_hairs->adjust(mX, -mY);
-			}
-			//glm::vec4 pos(x, y, 0.f, 1.f);
-			//glm::vec4 adjM = pos * invProj * invCam;
-			//crossHairs->adjust(mX, -mY);
-			//crossHairs->adjust(adjM.x, adjM.y);
-			std::cout << x << ", " << y << std::endl;
-			std::cout << mX << ", " << -mY << std::endl;
-		}
-	}
+            //float mX = (((float)2 * x) - w) / w;
+            //float mX = (0.1f + 3.5f) * x / 0.1f;
+            //   float mY = (0.1f + 3.5f) * y / 0.1f;
+            //mY = (((float)2 * mY) - h) / h;
+            if (isCorr == 0) {
+                crossHairs->adjust(mX, -mY);
+            }
+            else {
+                corr_cross_hairs->adjust(mX, -mY);
+            }
+            //glm::vec4 pos(x, y, 0.f, 1.f);
+            //glm::vec4 adjM = pos * invProj * invCam;
+            //crossHairs->adjust(mX, -mY);
+            //crossHairs->adjust(adjM.x, adjM.y);
+            std::cout << x << ", " << y << std::endl;
+            std::cout << mX << ", " << -mY << std::endl;
+        }
+    }
 }
 
 static bool sortx(glm::dvec2 a, glm::dvec2 b) {
-	const float t = 1e-10;
-	return (a.x < b.x);
+    const float t = 1e-10;
+    return (a.x < b.x);
 }
 
 static bool sortxy(glm::dvec2 a, glm::dvec2 b) {
-	const float t = 0.7e-1;
-	if ((a.x < b.x + t) && (a.x > b.x - t)) {
-		return a.y < b.y;
-	}
-	return (a.x < b.x);
+    const float t = 0.7e-1;
+    if ((a.x < b.x + t) && (a.x > b.x - t)) {
+        return a.y < b.y;
+    }
+    return (a.x < b.x);
 }
 
 static CrossHairs* redCrossHairs;
@@ -180,78 +180,78 @@ static Recon recon;
 static int is_recon = 0;
 
 static void calibrate() {
-		calib.calibrate();
-	    redCrossHairs = new CrossHairs(5, SCREEN_SIZE.x, SCREEN_SIZE.y, glm::vec3(1.f, 0.f, 0.f));
-	    redCrossHairs->init(gProgram);
-		calib.posCrossHairs(redCrossHairs, imgNo);
-		calibrated = 1;
+        calib.calibrate();
+        redCrossHairs = new CrossHairs(5, SCREEN_SIZE.x, SCREEN_SIZE.y, glm::vec3(1.f, 0.f, 0.f));
+        redCrossHairs->init(gProgram);
+        calib.posCrossHairs(redCrossHairs, imgNo);
+        calibrated = 1;
 }
 
 static void reconstruct() {
-	recon.set_gprogram(gProgram);
-	recon.calibrate();
-	recon.reconstruct_obj(corrNo, &calib);
-	is_recon = 1;
+    recon.set_gprogram(gProgram);
+    recon.calibrate();
+    recon.reconstruct_obj(corrNo, &calib);
+    is_recon = 1;
 }
 
 
 static void saveImg() {
-		std::vector<glm::dvec2> imgPoints;
-		for (auto& mapItr = crossHairs->pos.begin(); mapItr != crossHairs->pos.end(); ++mapItr) {
-			glm::dvec3 pt = mapItr->second;
-			imgPoints.push_back(glm::dvec2(pt.x, pt.y));
-		}
-		std::sort(imgPoints.begin(), imgPoints.end(), sortx);
-		std::sort(imgPoints.begin(), imgPoints.end(), sortxy);
-		std::vector<glm::dvec3> worldPts;
-		//const double width = 101.6; // mm, 4 inches
-		//const double width = 76.2; // mm, 3 inches
-		const double width = 38.1; // mm, 1.5 inches
-		const double height = width; // square
-		for (int i = 0; i < crossHairs->totInRow; ++i) {
-			for (int j = 0; j < crossHairs->totInRow; ++j) {
-				worldPts.push_back(glm::dvec3(i * width, j * height, 0.f));
-			}
-		}
-		calib.saveImgPnts(worldPts, imgPoints, imgNo);
+        std::vector<glm::dvec2> imgPoints;
+        for (auto& mapItr = crossHairs->pos.begin(); mapItr != crossHairs->pos.end(); ++mapItr) {
+            glm::dvec3 pt = mapItr->second;
+            imgPoints.push_back(glm::dvec2(pt.x, pt.y));
+        }
+        std::sort(imgPoints.begin(), imgPoints.end(), sortx);
+        std::sort(imgPoints.begin(), imgPoints.end(), sortxy);
+        std::vector<glm::dvec3> worldPts;
+        //const double width = 101.6; // mm, 4 inches
+        //const double width = 76.2; // mm, 3 inches
+        const double width = 38.1; // mm, 1.5 inches
+        const double height = width; // square
+        for (int i = 0; i < crossHairs->totInRow; ++i) {
+            for (int j = 0; j < crossHairs->totInRow; ++j) {
+                worldPts.push_back(glm::dvec3(i * width, j * height, 0.f));
+            }
+        }
+        calib.saveImgPnts(worldPts, imgPoints, imgNo);
 }
 
 static void load_img_points() {
-		calib.load_img_points(crossHairs, imgNo);
+        calib.load_img_points(crossHairs, imgNo);
 }
 
 static void save_corr() {
-		std::vector<glm::dvec2> img_points1;
-		std::vector<glm::dvec2> img_points2;
-		auto& pos = corr_cross_hairs->pos;
-		glm::mat4 model1 = glm::translate(glm::mat4(1.f), glm::vec3(offset, 0.f, 0.f));
-		glm::mat4 model1Inv = model1._inverse();
-		glm::mat4 model2 = glm::translate(glm::mat4(1.f), glm::vec3(-offset, 0.f, 0.f));
-		glm::mat4 model2Inv = model2._inverse();
-		for (auto i = 0u; i < pos.size(); ++i)  {
-			const int h = SCREEN_SIZE.y;
-			const int w = SCREEN_SIZE.x;
-			glm::vec4 modelPos = model1Inv * glm::vec4(pos[i], 1.0);
-			std::cout << modelPos.x << ", " << modelPos.y << std::endl;
-			if (!(i % 2)) {
-			    img_points1.push_back(glm::dvec2(pos[i].x, pos[i].y));
-			} else {
-			    img_points2.push_back(glm::dvec2(pos[i].x, pos[i].y));
-			}
-		}
-		//calib.saveImgPnts(worldPts, img_points1, imgNo);
+        std::vector<glm::dvec2> img_points1;
+        std::vector<glm::dvec2> img_points2;
+        auto& pos = corr_cross_hairs->pos;
+        glm::mat4 model1 = glm::translate(glm::mat4(1.f), glm::vec3(offset, 0.f, 0.f));
+        glm::mat4 model1Inv = model1._inverse();
+        glm::mat4 model2 = glm::translate(glm::mat4(1.f), glm::vec3(-offset, 0.f, 0.f));
+        glm::mat4 model2Inv = model2._inverse();
+        for (auto i = 0u; i < pos.size(); ++i)  {
+            const int h = SCREEN_SIZE.y;
+            const int w = SCREEN_SIZE.x;
+            glm::vec4 modelPos = model1Inv * glm::vec4(pos[i], 1.0);
+            std::cout << modelPos.x << ", " << modelPos.y << std::endl;
+            if (!(i % 2)) {
+                img_points1.push_back(glm::dvec2(pos[i].x, pos[i].y));
+            } else {
+                img_points2.push_back(glm::dvec2(pos[i].x, pos[i].y));
+            }
+        }
+        //calib.saveImgPnts(worldPts, img_points1, imgNo);
 }
 
 static void addCorrPnt() {
-	if (!isCorr) return;
+    if (!isCorr) return;
 }
 
 static void detect_features() {
-	recon.detect_features();
+    recon.detect_features();
 }
 
 static void snap_to_corners() {
-	crossHairs->detect_corners(imgNo, SCREEN_SIZE.x, SCREEN_SIZE.y);
+    crossHairs->detect_corners(imgNo, SCREEN_SIZE.x, SCREEN_SIZE.y);
 }
 
 //static void saveImg2() {
@@ -274,52 +274,52 @@ static void snap_to_corners() {
 //
 //}
 static void load_common() {
-	is_recon = 0;
-	isCorr = 0;
-	calib.load_img_points(crossHairs, imgNo);
+    is_recon = 0;
+    isCorr = 0;
+    calib.load_img_points(crossHairs, imgNo);
 }
 
 static void loadImage1() {
-	imgNo = 1;
-	load_common();
+    imgNo = 1;
+    load_common();
 }
 
 static void loadImage2() {
-	imgNo = 2;
-	load_common();
+    imgNo = 2;
+    load_common();
 }
 
 static void loadImage3() {
-	imgNo = 3;
-	load_common();
+    imgNo = 3;
+    load_common();
 }
 
 static void loadCorr1() {
-	is_recon = 0;
-	isCorr = 1;
-	corrNo = 1;
+    is_recon = 0;
+    isCorr = 1;
+    corrNo = 1;
 }
 
 static void loadCorr2() {
-	is_recon = 0;
-	isCorr = 1;
-	corrNo = 2;
+    is_recon = 0;
+    isCorr = 1;
+    corrNo = 2;
 }
 
 static void TW_CALL calibrateAnt(void* clientData) {
-	calibrate();
+    calibrate();
 }
 
 static void TW_CALL recon_ant(void* clientData) {
-	reconstruct();
+    reconstruct();
 }
 
 static void TW_CALL loadCorr1Ant(void* clientData) {
-	loadCorr1();
+    loadCorr1();
 }
 
 static void TW_CALL loadCorr2Ant(void* clientData) {
-	loadCorr2();
+    loadCorr2();
 }
 
 //static void TW_CALL addCorrPntAnt(void* clientData) {
@@ -327,43 +327,43 @@ static void TW_CALL loadCorr2Ant(void* clientData) {
 //}
 
 static void TW_CALL loadImage1Ant(void* clientData) {
-	loadImage1();
+    loadImage1();
 }
 
 static void TW_CALL loadImage2Ant(void* clientData) {
-	loadImage2();
+    loadImage2();
 }
 
 static void TW_CALL loadImage3Ant(void* clientData) {
-	loadImage3();
+    loadImage3();
 }
 
 static void TW_CALL saveImg1Ant(void* clientData) {
-	saveImg();
+    saveImg();
 }
 
 static void TW_CALL saveImg2Ant(void* clientData) {
-	saveImg();
+    saveImg();
 }
 
 static void TW_CALL saveImg3Ant(void* clientData) {
-	saveImg();
+    saveImg();
 }
 
 static void TW_CALL saveCorr1Ant(void* clientData) {
-	save_corr();
+    save_corr();
 }
 
 static void TW_CALL saveCorr2Ant(void* clientData) {
-	save_corr();
+    save_corr();
 }
 
 static void TW_CALL detect_features_Ant(void* clientData) {
-	detect_features();
+    detect_features();
 }
 
 static void TW_CALL snap_to_corners_Ant(void* clientData) {
-	snap_to_corners();
+    snap_to_corners();
 }
 
 //static void handleKeyBoard() {
@@ -487,8 +487,8 @@ static void Render() {
     glClearColor(0, 0, 0, 1); // black
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	//handleMousePress();
-	//handleKeyBoard();
+    //handleMousePress();
+    //handleKeyBoard();
     // bind the program (the shaders)
     gProgram->use();
 
@@ -498,96 +498,97 @@ static void Render() {
     // bind the texture and set the "tex" uniform in the fragment shader
     glActiveTexture(GL_TEXTURE0);
 
-	if (is_recon) {
-		recon.draw();
-	}
-	else {
+    if (is_recon) {
+        recon.draw();
+    }
+    else {
 
-		if (isCorr == 0) {
-			if (imgNo == 1) {
-				glBindTexture(GL_TEXTURE_2D, gTexture->object());
-			}
-			else if (imgNo == 2) {
-				glBindTexture(GL_TEXTURE_2D, gTexture2->object());
-			}
-			else if (imgNo == 3) {
-				glBindTexture(GL_TEXTURE_2D, gTexture3->object());
-			}
+        if (isCorr == 0) {
+            if (imgNo == 1) {
+                glBindTexture(GL_TEXTURE_2D, gTexture->object());
+            }
+            else if (imgNo == 2) {
+                glBindTexture(GL_TEXTURE_2D, gTexture2->object());
+            }
+            else if (imgNo == 3) {
+                glBindTexture(GL_TEXTURE_2D, gTexture3->object());
+            }
 
-			if (calibrated == 1) {
-				redCrossHairs->draw(center);
-			}
-			gProgram->setUniform("tex", 0); //set to 0 because the texture is bound to GL_TEXTURE0
+            if (calibrated == 1) {
+                redCrossHairs->draw(center);
+            }
+            gProgram->setUniform("tex", 0); //set to 0 because the texture is bound to GL_TEXTURE0
 
-			crossHairs->draw(center);
-			// bind the VAO (the triangle)
-			glBindVertexArray(gVAO);
+            crossHairs->draw(center);
+            // bind the VAO (the triangle)
+            glBindVertexArray(gVAO);
 
-			gProgram->setUniform("model", glm::mat4(1.f));
-			// draw the VAO
-			glDrawArrays(GL_TRIANGLES, 0, 6);
+            gProgram->setUniform("model", glm::mat4(1.f));
+            // draw the VAO
+            glDrawArrays(GL_TRIANGLES, 0, 6);
 
-			// unbind the VAO, the program and the texture
-			glBindVertexArray(0);
-			glBindTexture(GL_TEXTURE_2D, 0);
+            // unbind the VAO, the program and the texture
+            glBindVertexArray(0);
+            glBindTexture(GL_TEXTURE_2D, 0);
 
-			if (calibrated == 1) {
-				redCrossHairs->draw(center);
-			}
-			crossHairs->draw(center);
-		}
-		else {
-			glm::mat4 model1 = glm::translate(glm::mat4(1.f), glm::vec3(offset, 0.f, 0.f));
-			glm::mat4 model2 = glm::translate(glm::mat4(1.f), glm::vec3(-offset, 0.f, 0.f));
-			corr_cross_hairs->draw(center, model1, model2);
-			if (corrNo == 1) {
-				glBindVertexArray(gVAO);
-				glBindTexture(GL_TEXTURE_2D, gTexture->object());
-				gProgram->setUniform("tex", 0); //set to 0 because the texture is bound to GL_TEXTURE0
+            if (calibrated == 1) {
+                redCrossHairs->draw(center);
+            }
+            crossHairs->draw(center);
+        }
+        else {
 
-				// bind the VAO (the triangle)
+            glm::mat4 model1 = glm::translate(glm::mat4(1.f), glm::vec3(offset, 0.f, 0.f));
+            glm::mat4 model2 = glm::translate(glm::mat4(1.f), glm::vec3(-offset, 0.f, 0.f));
+            //corr_cross_hairs->draw(center, model1, model2);
+            if (corrNo == 1) {
+                glBindVertexArray(gVAO);
+                glBindTexture(GL_TEXTURE_2D, gTexture->object());
+                gProgram->setUniform("tex", 0); //set to 0 because the texture is bound to GL_TEXTURE0
 
-				gProgram->setUniform("model", model1);
-				// draw the VAO
-				glDrawArrays(GL_TRIANGLES, 0, 6);
+                // bind the VAO (the triangle)
 
-				glBindTexture(GL_TEXTURE_2D, gTexture2->object());
-				gProgram->setUniform("model", model2);
-				glDrawArrays(GL_TRIANGLES, 0, 6);
-				glBindVertexArray(0);
-			}
-			else if (corrNo == 2) {
-				glBindVertexArray(gVAO);
-				glBindTexture(GL_TEXTURE_2D, gTexture2->object());
-				gProgram->setUniform("tex", 0); //set to 0 because the texture is bound to GL_TEXTURE0
+                gProgram->setUniform("model", model1);
+                // draw the VAO
+                glDrawArrays(GL_TRIANGLES, 0, 6);
 
-				// bind the VAO (the triangle)
+                glBindTexture(GL_TEXTURE_2D, gTexture2->object());
+                gProgram->setUniform("model", model2);
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+                glBindVertexArray(0);
+            }
+            else if (corrNo == 2) {
+                glBindVertexArray(gVAO);
+                glBindTexture(GL_TEXTURE_2D, gTexture2->object());
+                gProgram->setUniform("tex", 0); //set to 0 because the texture is bound to GL_TEXTURE0
 
-				gProgram->setUniform("model", glm::translate(glm::mat4(1.f), glm::vec3(offset, 0.f, 0.f)));
-				// draw the VAO
-				glDrawArrays(GL_TRIANGLES, 0, 6);
+                // bind the VAO (the triangle)
 
-				glBindTexture(GL_TEXTURE_2D, gTexture3->object());
-				gProgram->setUniform("model", glm::translate(glm::mat4(1.f), glm::vec3(-offset, 0.f, 0.f)));
-				glDrawArrays(GL_TRIANGLES, 0, 6);
-				glBindVertexArray(0);
-			}
+                gProgram->setUniform("model", glm::translate(glm::mat4(1.f), glm::vec3(offset, 0.f, 0.f)));
+                // draw the VAO
+                glDrawArrays(GL_TRIANGLES, 0, 6);
 
-
-		}
-	}
+                glBindTexture(GL_TEXTURE_2D, gTexture3->object());
+                gProgram->setUniform("model", glm::translate(glm::mat4(1.f), glm::vec3(-offset, 0.f, 0.f)));
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+                glBindVertexArray(0);
+            }
 
 
-		// unbind the VAO, the program and the texture
-		glBindTexture(GL_TEXTURE_2D, 0);
+        }
+    }
+
+
+        // unbind the VAO, the program and the texture
+        glBindTexture(GL_TEXTURE_2D, 0);
 
     // draw cross hairs
 
 
     gProgram->stopUsing();
     
-	//glfwPollEvents();
-	TwDraw();
+    //glfwPollEvents();
+    TwDraw();
     // swap the display buffers (displays what was just drawn)
     glfwSwapBuffers();
 }
@@ -638,38 +639,38 @@ void AppMain() {
 
     // Ant Bar
 
-	TwWindowSize(SCREEN_SIZE.x, SCREEN_SIZE.y);
-	// Ant Tweak Bar
-	TwInit(TW_OPENGL_CORE, NULL);
-	bar = TwNewBar("CC");
-	TwDefine(" GLOBAL help='This example shows how to integrate AntTweakBar with GLFW and OpenGL.' "); // Message added to the help bar.
+    TwWindowSize(SCREEN_SIZE.x, SCREEN_SIZE.y);
+    // Ant Tweak Bar
+    TwInit(TW_OPENGL_CORE, NULL);
+    bar = TwNewBar("CC");
+    TwDefine(" GLOBAL help='This example shows how to integrate AntTweakBar with GLFW and OpenGL.' "); // Message added to the help bar.
 
-	//TwAddButton(bar, "Load Image 1", loadImage1Ant, NULL, " label='Load Image 1' key=9 group='Calibrate'");
-	//TwAddButton(bar, "Save Image 1 Points", saveImg1Ant, NULL, " label='Save Image 1' key=1 group='Save'");
-	//TwAddButton(bar, "Load Image 2", loadImage2Ant, NULL, " label='Load Image 2' key=0 group='Calibrate'");
-	//TwAddButton(bar, "Save Image 2 Points", saveImg2Ant, NULL, " label='Save Image 2' key=2 group='Save'");
-	//TwAddButton(bar, "Load Image 3", loadImage3Ant, NULL, " label='Load Image 3' key=- group='Calibrate'");
-	//TwAddButton(bar, "Save Image 3 Points", saveImg3Ant, NULL, " label='Save Image 3' key=3 group='Save'");
-	TwAddButton(bar, "Load Corr 1 and 2", loadCorr1Ant, NULL, " label='Load Image 1 & 2' key=c group='Correspond'");
-	//TwAddButton(bar, "Save Corr Points", saveCorr1Ant, NULL, " label='Save Corr Points' key=5 group='Correspond'");
-	TwAddButton(bar, "Feature Detect", detect_features_Ant, NULL, " label='Detect Features' key=d group='Correspond'");
-	//TwAddButton(bar, "Snap to corners", snap_to_corners_Ant, NULL, " label='Snap to Corners' key=d group='Calibrate'");
+    //TwAddButton(bar, "Load Image 1", loadImage1Ant, NULL, " label='Load Image 1' key=9 group='Calibrate'");
+    //TwAddButton(bar, "Save Image 1 Points", saveImg1Ant, NULL, " label='Save Image 1' key=1 group='Save'");
+    //TwAddButton(bar, "Load Image 2", loadImage2Ant, NULL, " label='Load Image 2' key=0 group='Calibrate'");
+    //TwAddButton(bar, "Save Image 2 Points", saveImg2Ant, NULL, " label='Save Image 2' key=2 group='Save'");
+    //TwAddButton(bar, "Load Image 3", loadImage3Ant, NULL, " label='Load Image 3' key=- group='Calibrate'");
+    //TwAddButton(bar, "Save Image 3 Points", saveImg3Ant, NULL, " label='Save Image 3' key=3 group='Save'");
+    //TwAddButton(bar, "Load Corr 1 and 2", loadCorr1Ant, NULL, " label='Load Image 1 & 2' key=c group='Correspond'");
+    //TwAddButton(bar, "Save Corr Points", saveCorr1Ant, NULL, " label='Save Corr Points' key=5 group='Correspond'");
+    //TwAddButton(bar, "Feature Detect", detect_features_Ant, NULL, " label='Detect Features' key=d group='Correspond'");
+    //TwAddButton(bar, "Snap to corners", snap_to_corners_Ant, NULL, " label='Snap to Corners' key=d group='Calibrate'");
 
-	//TwAddButton(bar, "Calibratee", calibrateAnt, NULL, " label='Calibrate' key=z group='Calibrate'");
-	TwAddButton(bar, "Reconstruct", recon_ant, NULL, " label='Reconstruct' key=r group='Recon'");
-	//TwAddButton(bar, "add Corr poitn", addPnt, NULL, " label='Add Corr. Point' key=a group='Correspond'");
+    //TwAddButton(bar, "Calibratee", calibrateAnt, NULL, " label='Calibrate' key=z group='Calibrate'");
+    TwAddButton(bar, "Reconstruct", recon_ant, NULL, " label='Reconstruct' key=r group='Recon'");
+    //TwAddButton(bar, "add Corr poitn", addPnt, NULL, " label='Add Corr. Point' key=a group='Correspond'");
 
-	//glfwSetMouseButtonCallback((GLFWmousebuttonfun)TwEventMouseButtonGLFW);
-	// - Directly redirect GLFW mouse position events to AntTweakBar
-	glfwSetMousePosCallback((GLFWmouseposfun)TwEventMousePosGLFW);
-	// - Directly redirect GLFW mouse wheel events to AntTweakBar
-	glfwSetMouseWheelCallback((GLFWmousewheelfun)TwEventMouseWheelGLFW);
-	// - Directly redirect GLFW key events to AntTweakBar
-	glfwSetKeyCallback((GLFWkeyfun)TwEventKeyGLFW);
-	//// - Directly redirect GLFW char events to AntTweakBar
-	glfwSetCharCallback((GLFWcharfun)TwEventCharGLFW);
+    //glfwSetMouseButtonCallback((GLFWmousebuttonfun)TwEventMouseButtonGLFW);
+    // - Directly redirect GLFW mouse position events to AntTweakBar
+    glfwSetMousePosCallback((GLFWmouseposfun)TwEventMousePosGLFW);
+    // - Directly redirect GLFW mouse wheel events to AntTweakBar
+    glfwSetMouseWheelCallback((GLFWmousewheelfun)TwEventMouseWheelGLFW);
+    // - Directly redirect GLFW key events to AntTweakBar
+    glfwSetKeyCallback((GLFWkeyfun)TwEventKeyGLFW);
+    //// - Directly redirect GLFW char events to AntTweakBar
+    glfwSetCharCallback((GLFWcharfun)TwEventCharGLFW);
 
-	glfwSetMouseButtonCallback(OnMousePress);
+    glfwSetMouseButtonCallback(OnMousePress);
 
 
     // load vertex and fragment shaders into opengl
@@ -704,12 +705,12 @@ void AppMain() {
 
 
 int main(int argc, char *argv[]) {
-    try {
+    //try {
         AppMain();
-    } catch (const std::exception& e){
-        std::cerr << "ERROR: " << e.what() << std::endl;
-        return EXIT_FAILURE;
-    }
+    //} catch (const std::exception& e){
+    //    std::cerr << "ERROR: " << e.what() << std::endl;
+    //    return EXIT_FAILURE;
+    //}
 
     return EXIT_SUCCESS;
 }
