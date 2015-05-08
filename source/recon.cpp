@@ -84,7 +84,7 @@ void Recon::calibrate() {
 
 	cv::Size imageSize;
 
-	for (int i = 0; i < 2; ++i) {
+	for (int i = 0; i < 12; ++i) {
 		vector<Point2f> point_buf;
 		vector<Point3f> corners;
         
@@ -97,6 +97,7 @@ void Recon::calibrate() {
 		cv::Size board_size(9, 6);
 
 		imageSize = view.size();
+		image_size_ = imageSize;
 
 		bool found;
 		found = findChessboardCorners(view, board_size, point_buf);
@@ -104,21 +105,21 @@ void Recon::calibrate() {
 		//	CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_NORMALIZE_IMAGE);
 
 		cv::cvtColor(view, viewGray, COLOR_BGR2GRAY);
-		cornerSubPix(viewGray, point_buf, Size(9, 6),
-			Size(-1, -1), TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.1));
+		cornerSubPix(viewGray, point_buf, Size(11, 11),
+			Size(-1, -1), TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.01));
 
 
 		drawChessboardCorners(view, board_size, Mat(point_buf), found);
-		imshow(file_name, view);
+		//imshow(file_name, view);
 
 		for (int i = 0; i < point_buf.size(); ++i) {
-			point_buf[i].y = view.rows - point_buf[i].y;
-			//point_buf[i].y = point_buf[i].y;
+			//point_buf[i].y = view.rows - point_buf[i].y;
+			point_buf[i].y = point_buf[i].y;
 		}
 
 		//float squareSize = 38.1; // mm, 1.5 inches
 		//float squareSize = 25; // 25 mm
-		float squareSize = 11; // 11 mm
+		float squareSize = 11.f; // 11 mm
 
 		//for (int i = 0; i < board_size.height; ++i)
 		for (int i = board_size.height - 1; i >= 0; --i)
@@ -128,9 +129,9 @@ void Recon::calibrate() {
 
 
 		img_points[i % 2].push_back(point_buf);
-		//if (i % 2 == 0) {
+		if (i % 2 == 0) {
 			world_points.push_back(corners);
-		//}
+		}
 	}
 	// do calibration
 
@@ -145,8 +146,8 @@ void Recon::calibrate() {
 	Mat cameraMatrix[2], distCoeffs[2];
 	cameraMatrix[0] = Mat::eye(3, 3, CV_64F);
 	cameraMatrix[1] = Mat::eye(3, 3, CV_64F);
-	distCoeffs[0] = Mat::zeros(8, 1, CV_64F);
-	distCoeffs[1] = Mat::zeros(8, 1, CV_64F);
+	//distCoeffs[0] = Mat::zeros(8, 1, CV_64F);
+	//distCoeffs[1] = Mat::zeros(8, 1, CV_64F);
 
 
 	vector<vector<Point2f>> revised_img_points[2];
@@ -156,82 +157,82 @@ void Recon::calibrate() {
 	//revised_img_points[0].push_back(img_points[0]);
 	//revised_img_points[1].push_back(img_points[1]);
 
-	for (auto i = 0u; i < 2; ++i) {
-		double rms = calibrateCamera(revised_world_points[i], img_points[i], imageSize, cameraMatrix[i],
-			distCoeffs[i], rvecs[i], tvecs[i], CV_CALIB_FIX_K2 | CV_CALIB_FIX_K3 | CV_CALIB_FIX_K4 | CV_CALIB_FIX_K5 | CV_CALIB_FIX_K6);
-		///*|CV_CALIB_FIX_K3*/|CV_CALIB_FIX_K4|CV_CALIB_FIX_K5);
-		printf("RMS error reported by calibrateCamera: %g\n", rms);
+	//for (auto i = 0u; i < 2; ++i) {
+	//	double rms = calibrateCamera(revised_world_points[i], img_points[i], imageSize, cameraMatrix[i],
+	//		distCoeffs[i], rvecs[i], tvecs[i], CV_CALIB_FIX_K2 | CV_CALIB_FIX_K3 | CV_CALIB_FIX_K4 | CV_CALIB_FIX_K5 | CV_CALIB_FIX_K6);
+	//	///*|CV_CALIB_FIX_K3*/|CV_CALIB_FIX_K4|CV_CALIB_FIX_K5);
+	//	printf("RMS error reported by calibrateCamera: %g\n", rms);
 
-		bool ok = checkRange(cameraMatrix[i]) && checkRange(distCoeffs[i]);
-	}
+	//	bool ok = checkRange(cameraMatrix[i]) && checkRange(distCoeffs[i]);
+	//}
 
-	//Mat R, T, E, F;
+	Mat R, T, E, F;
 
-	//double rms = stereoCalibrate(world_points, img_points[0], img_points[1],
-	//	cameraMatrix[0], distCoeffs[0],
-	//	cameraMatrix[1], distCoeffs[1],
-	//	imageSize, R, T, E, F,
-	//	TermCriteria(CV_TERMCRIT_ITER + CV_TERMCRIT_EPS, 100, 1e-5),
-	//	//CV_CALIB_FIX_INTRINSIC +
- //       CV_CALIB_FIX_FOCAL_LENGTH + 
-	//	CV_CALIB_FIX_ASPECT_RATIO +
-	//	CV_CALIB_ZERO_TANGENT_DIST +
-	//	CV_CALIB_RATIONAL_MODEL +
-	//	CV_CALIB_FIX_K3 + CV_CALIB_FIX_K4 + CV_CALIB_FIX_K5);
-	//std::cout << "done with RMS error=" << rms << std::endl;
+	double rms = stereoCalibrate(world_points, img_points[0], img_points[1],
+		cameraMatrix[0], distCoeffs[0],
+		cameraMatrix[1], distCoeffs[1],
+		imageSize, R, T, E, F,
+		TermCriteria(CV_TERMCRIT_ITER + CV_TERMCRIT_EPS, 100, 1e-5),
+		//CV_CALIB_FIX_INTRINSIC +
+        //CV_CALIB_FIX_FOCAL_LENGTH + 
+		CV_CALIB_FIX_ASPECT_RATIO +
+		//CV_CALIB_ZERO_TANGENT_DIST +
+		CV_CALIB_RATIONAL_MODEL
+		);
+	std::cout << "done with RMS error=" << rms << std::endl;
 
 	// CALIBRATION QUALITY CHECK
 	// because the output fundamental matrix implicitly
 	// includes all the output information,
 	// we can check the quality of calibration using the
 	// epipolar geometry constraint: m2^t*F*m1=0
-	//double err = 0;
-	//int npoints = 0;
-	//vector<Vec3f> lines[2];
-	//for (int i = 0; i < 1; i++)
-	//{
-	//	int npt = (int)img_points[0][i].size();
-	//	Mat imgpt[2];
-	//	for (int k = 0; k < 2; k++)
-	//	{
-	//		imgpt[k] = Mat(img_points[k][i]);
-	//		undistortPoints(imgpt[k], imgpt[k], cameraMatrix[k], distCoeffs[k], Mat(), cameraMatrix[k]);
-	//		computeCorrespondEpilines(imgpt[k], k + 1, F, lines[k]);
-	//	}
-	//	for (int j = 0; j < npt; j++)
-	//	{
-	//		double errij = fabs(img_points[0][i][j].x*lines[1][j][0] +
-	//			img_points[0][i][j].y*lines[1][j][1] + lines[1][j][2]) +
-	//			fabs(img_points[1][i][j].x*lines[0][j][0] +
-	//			img_points[1][i][j].y*lines[0][j][1] + lines[0][j][2]);
-	//		err += errij;
-	//	}
-	//	npoints += npt;
-	//}
-	//std::cout << "average reprojection err = " << err / npoints << std::endl;
+	double err = 0;
+	int npoints = 0;
+	vector<Vec3f> lines[2];
+	for (int i = 0; i < 1; i++)
+	{
+		int npt = (int)img_points[0][i].size();
+		Mat imgpt[2];
+		for (int k = 0; k < 2; k++)
+		{
+			imgpt[k] = Mat(img_points[k][i]);
+			undistortPoints(imgpt[k], imgpt[k], cameraMatrix[k], distCoeffs[k], Mat(), cameraMatrix[k]);
+			computeCorrespondEpilines(imgpt[k], k + 1, F, lines[k]);
+		}
+		for (int j = 0; j < npt; j++)
+		{
+			double errij = fabs(img_points[0][i][j].x*lines[1][j][0] +
+				img_points[0][i][j].y*lines[1][j][1] + lines[1][j][2]) +
+				fabs(img_points[1][i][j].x*lines[0][j][0] +
+				img_points[1][i][j].y*lines[0][j][1] + lines[0][j][2]);
+			err += errij;
+		}
+		npoints += npt;
+	}
+	std::cout << "average reprojection err = " << err / npoints << std::endl;
 
 
 
-	//cv::Mat Rnew[2];
-	//cv::Mat P[2], Q;
+	cv::Mat Rnew[2];
+	cv::Mat P[2], Q;
 
-	//stereoRectify(cameraMatrix[0], distCoeffs[0],
-	//	cameraMatrix[1], distCoeffs[1],
-	//	imageSize, R, T, Rnew[0], Rnew[1], P[0], P[1], Q,
-	//	0, 1, imageSize, &validRoi_[0], &validRoi_[1]);
+	stereoRectify(cameraMatrix[0], distCoeffs[0],
+		cameraMatrix[1], distCoeffs[1],
+		imageSize, R, T, Rnew[0], Rnew[1], P[0], P[1], Q,
+		0, 1, imageSize, &validRoi_[0], &validRoi_[1]);
 
 
-	//initUndistortRectifyMap(cameraMatrix[0], distCoeffs[0], Rnew[0], P[0], imageSize, CV_16SC2, rmap_[0][0], rmap_[0][1]);
-	//initUndistortRectifyMap(cameraMatrix[1], distCoeffs[1], Rnew[1], P[1], imageSize, CV_16SC2, rmap_[1][0], rmap_[1][1]);
+	initUndistortRectifyMap(cameraMatrix[0], distCoeffs[0], Rnew[0], P[0], imageSize, CV_16SC2, rmap_[0][0], rmap_[0][1]);
+	initUndistortRectifyMap(cameraMatrix[1], distCoeffs[1], Rnew[1], P[1], imageSize, CV_16SC2, rmap_[1][0], rmap_[1][1]);
 
-	//for (int k = 0; k < 2; k++)
-	//{
-	//	std::string filename = (k == 0) ? "resources/camera-left/osl-color-seq-1 (1024x683).jpg" : "resources/camera-right/osl-color-seq-1 (1024x683).jpg";
-	//	cv::Mat mask_applied = imread(filename), rImg;
+	for (int k = 0; k < 2; k++)
+	{
+		std::string filename = (k == 0) ? "resources/camera-left/osl-color-seq-1 (1024x683).jpg" : "resources/camera-right/osl-color-seq-1 (1024x683).jpg";
+		cv::Mat mask_applied = imread(filename), rImg;
 
-	//	remap(mask_applied, rImg, rmap_[k][0], rmap_[k][1], CV_INTER_LINEAR);
-	//	int j = 0;
-	//}
+		remap(mask_applied, rImg, rmap_[k][0], rmap_[k][1], CV_INTER_LINEAR);
+		int j = 0;
+	}
 	//remap(img, rimg, rmap[k][0], rmap[k][1], CV_INTER_LINEAR);
 
 	//for (int i = 0; i < world_points.size(); ++i) {
@@ -264,15 +265,15 @@ void Recon::calibrate() {
 	//}
 
 	for (int i = 0; i < 2; ++i) {
-		cv::Mat rotation_matrix;
-		cv::Rodrigues(rvecs[i][0], rotation_matrix);
-		cv::Mat E(3, 4, CV_64F);
-		rotation_matrix.col(0).copyTo(E.col(0));
-		rotation_matrix.col(1).copyTo(E.col(1));
-		rotation_matrix.col(2).copyTo(E.col(2));
-		tvecs[i][0].col(0).copyTo(E.col(3));
-		cv::Mat proj =  cameraMatrix[i] * E ;
-		//cv::Mat proj = P[i];
+		//cv::Mat rotation_matrix;
+		//cv::Rodrigues(rvecs[i][0], rotation_matrix);
+		//cv::Mat E(3, 4, CV_64F);
+		//rotation_matrix.col(0).copyTo(E.col(0));
+		//rotation_matrix.col(1).copyTo(E.col(1));
+		//rotation_matrix.col(2).copyTo(E.col(2));
+		//tvecs[i][0].col(0).copyTo(E.col(3));
+		//cv::Mat proj =  cameraMatrix[i] * E ;
+		cv::Mat proj = P[i];
 		//cv::Mat proj =  Rnew[i] * P[i];
 		//cv::Mat proj =  E ;
 		//cv::Mat rect = Rnew[i] * P[i];
@@ -281,46 +282,46 @@ void Recon::calibrate() {
 		//rectification_matrices_.push_back(rect);
 	}
 
-	for (int i = 0; i < world_points.size(); ++i) {
-		double totalErr = 0.0;
-		double totalPoints = 0;
-	    vector<Point2f> imagePoints2;
-		for (int j = 0; j < (int)world_points[i].size(); j++)
-		{
-			cv::Mat world_pnt_mtx(4, 1, CV_64F);
-			for (int k = 0; k < 3; ++k) {
-				Vec3f vec = world_points[i][j];
-				world_pnt_mtx.at<double>(k, 0) = (double) (vec[k]);
-			}
-			world_pnt_mtx.at<double>(3, 0) = 1.0;
-			//cv::Mat img_pnt_result =  projection_matrices_[i] * world_pnt_mtx;
-			cv::Mat img_pnt_result =  projection_matrices_[i] * world_pnt_mtx;
+	//for (int i = 0; i < world_points.size(); ++i) {
+	//	double totalErr = 0.0;
+	//	double totalPoints = 0;
+	//    vector<Point2f> imagePoints2;
+	//	for (int j = 0; j < (int)world_points[i].size(); j++)
+	//	{
+	//		cv::Mat world_pnt_mtx(4, 1, CV_64F);
+	//		for (int k = 0; k < 3; ++k) {
+	//			Vec3f vec = world_points[i][j];
+	//			world_pnt_mtx.at<double>(k, 0) = (double) (vec[k]);
+	//		}
+	//		world_pnt_mtx.at<double>(3, 0) = 1.0;
+	//		//cv::Mat img_pnt_result =  projection_matrices_[i] * world_pnt_mtx;
+	//		cv::Mat img_pnt_result =  projection_matrices_[i] * world_pnt_mtx;
 
-			//for (int k = 0; k < 3; ++k) {
-			//	Vec3f vec = img_pnt_result;
-			//	world_pnt_mtx.at<double>(k, 0) = (double) (vec[k]);
-			//}
-			//world_pnt_mtx.at<double>(3, 0) = 1.0;
+	//		//for (int k = 0; k < 3; ++k) {
+	//		//	Vec3f vec = img_pnt_result;
+	//		//	world_pnt_mtx.at<double>(k, 0) = (double) (vec[k]);
+	//		//}
+	//		//world_pnt_mtx.at<double>(3, 0) = 1.0;
 
-			//img_pnt_result = P[i] * world_pnt_mtx;
-			cv::Vec3f img_pnt(img_pnt_result);
-			double z = img_pnt[2];
-			imagePoints2.push_back(Point2f(img_pnt[0]/z, img_pnt[1]/z));
-			//img_pnt = Vec3f(img_pnt[0]/z, img_pnt[1]/z, 1.f);
-			//img_pnt_result = Rnew[i] * img_pnt_result;
+	//		//img_pnt_result = P[i] * world_pnt_mtx;
+	//		cv::Vec3f img_pnt(img_pnt_result);
+	//		double z = img_pnt[2];
+	//		imagePoints2.push_back(Point2f(img_pnt[0]/z, img_pnt[1]/z));
+	//		//img_pnt = Vec3f(img_pnt[0]/z, img_pnt[1]/z, 1.f);
+	//		//img_pnt_result = Rnew[i] * img_pnt_result;
 
-			//z = img_pnt[2];
-			//imagePoints2.push_back(Point2f(img_pnt[0]/z, img_pnt[1]/z));
-		}
-		double err = norm(Mat(img_points[i][0]), Mat(imagePoints2), CV_L2);
-		int n = (int)world_points[i].size();
-		totalErr += err*err;
-		totalPoints += n;
+	//		//z = img_pnt[2];
+	//		//imagePoints2.push_back(Point2f(img_pnt[0]/z, img_pnt[1]/z));
+	//	}
+	//	double err = norm(Mat(img_points[i][0]), Mat(imagePoints2), CV_L2);
+	//	int n = (int)world_points[i].size();
+	//	totalErr += err*err;
+	//	totalPoints += n;
 
-	    std::cout << std::endl << "RMS error of projection matrix :" << std::sqrt(totalErr / totalPoints);
+	//    std::cout << std::endl << "RMS error of projection matrix :" << std::sqrt(totalErr / totalPoints);
 
-	}
-	std::cout << std::endl;
+	//}
+	//std::cout << std::endl;
 
 
 
@@ -448,14 +449,14 @@ void Recon::init_imgs(std::vector<cv::Mat>& calibImgs, std::vector<std::string> 
 		}
 
 		cv::Mat rImg;
-	    //remap(mask_applied, rImg, rmap_[is_right][0], rmap_[is_right][1], CV_INTER_LINEAR);
-		//calibImgs[i] = rImg;
+	    remap(mask_applied, rImg, rmap_[is_right][0], rmap_[is_right][1], CV_INTER_LINEAR);
+		calibImgs[i] = rImg;
 		int j = 0;
 	}
 	printf("  done!\n");
 }
 
-void get_unique_edges(const std::vector<cv::Mat>& calibImgs, 
+void Recon::get_unique_edges(const std::vector<cv::Mat>& calibImgs, 
 	std::unordered_map<int, std::unordered_map< int, std::vector<UniqueColorPair> > >& unique_colors_per_image,
 	bool is_right) {
 	std::string left_right_suffix = (is_right) ? "-R" : "-L";
@@ -466,7 +467,7 @@ void get_unique_edges(const std::vector<cv::Mat>& calibImgs,
 
 		// mean shift segmentation
 		//spatialRad = 10;
-		long long l = 5;
+		long long l = 7;
 		spatialRad = 10;
 		color_rad = 5; // whiteboard
 		color_rad = 16; // buddha
@@ -535,7 +536,7 @@ void get_unique_edges(const std::vector<cv::Mat>& calibImgs,
 			std::vector<UniqueColorPair> unique_color_pairs;
 			for (auto col = 0; col < edges.cols; ++col) {
 				bool is_in = true;
-				is_in = (row >= 360 && row <= 500);
+				is_in = (row >= 200 && row <= 250);
 				if (gray_edges.at<uchar>(row, col) > 0 && is_in) {
 					cv::Vec3i pre_color(0);
 					cv::Vec3i post_color(0);
@@ -549,7 +550,7 @@ void get_unique_edges(const std::vector<cv::Mat>& calibImgs,
 							count++;
 						}
 					}
-					if (count == 0) break;
+					if (count == 0) continue;
 					pre_color /= count;
 					post_color /= count;
 
@@ -627,9 +628,9 @@ void Recon::compute_correlation_per_image(std::unordered_map<int, std::unordered
 
 	assert(unique_colors_left.size() == unique_colors_right.size());
 
-	const unsigned color_threshold = 5;
+	const unsigned color_threshold = 10;
 
-	long long l = 5;
+	long long l = 7;
 	std::string left_right_suffix = "-L";
 	std::string flood_fill_filename = std::string("flood-fill-").append(std::to_string(l)).append(left_right_suffix).append(".png");
 	cv::Mat flood_fill_img = cv::imread(flood_fill_filename);
@@ -725,7 +726,7 @@ void Recon::compute_correlation(std::vector <glm::dvec2>& img_pts1, std::vector 
 
 
 	write_file("recon.cp", img_pts1, img_pts2);
-	read_input_file("recon.cp", img_pts1, img_pts2);
+	//read_input_file("recon.cp", img_pts1, img_pts2);
 }
 
 void Recon::detect_features() {
@@ -876,6 +877,30 @@ void Recon::recon_obj(const cv::Mat& A, const cv::Mat& E1, const cv::Mat& E2, co
 	//std::cout << "Projection Matrix 2: " << std::endl;
 	//std::cout << proj2 << std::endl;
 
+	//cv::Mat img_pt_mat1(2, img_pts1.size(), CV_64F);
+	//cv::Mat img_pt_mat2(2, img_pts1.size(), CV_64F);
+
+	//for (auto i = 0u; i < img_pts1.size(); ++i) {
+	//	for (auto x = 0u; x < 2; ++x) {
+	//		img_pt_mat1.at<double>(x, i) = img_pts1[i][x];
+	//	}
+	//}
+
+	//for (auto i = 0u; i < img_pts2.size(); ++i) {
+	//	for (auto x = 0u; x < 2; ++x) {
+	//		img_pt_mat2.at<double>(x, i) = img_pts2[i][x];
+	//	}
+	//}
+
+	//cv::Mat pts4D(4, img_pts1.size(), CV_64F);
+
+	//cv::triangulatePoints(proj1, proj2, img_pt_mat1, img_pt_mat2, pts4D);
+
+	//for (auto i = 0u; i < img_pts2.size(); ++i) {
+	//	world_pts.push_back(glm::dvec3(pts4D.at<double>(0, i) / pts4D.at<double>(3, i),
+	//		pts4D.at<double>(1, i) / pts4D.at<double>(3, i),
+	//		pts4D.at<double>(2, i) / pts4D.at<double>(3, i)));
+	//}
 
 	for (auto i = 0u; i < img_pts1.size(); ++i) {
 	    cv::Mat D(4, 3, CV_64F);
@@ -1087,7 +1112,7 @@ void Recon::traingulate_pts(const WPts& world_pnts, WPts& triangles, std::vector
 	cv::Subdiv2D subdiv(rect);
 	std::cout << std::endl;
 	for (int i = 0u; i < projected_pts.size(); ++i) {
-		std::cout << projected_pts[i].x << ", " << projected_pts[i].y << std::endl;
+		//std::cout << projected_pts[i].x << ", " << projected_pts[i].y << std::endl;
 		subdiv.insert(projected_pts[i]);
 	}
 
@@ -1168,20 +1193,17 @@ void Recon::traingulate_pts(const WPts& world_pnts, WPts& triangles, std::vector
 
     //tdogl::Bitmap bmp3 = tdogl::Bitmap::bitmapFromFile("resources/3dr1 (1024x1024).jpg");
 
-	//cv::Mat img = imread("resources/camera-left/osl-color-seq-1 (1024x683).jpg"), rimg;
-	//remap(img, rimg, rmap_[0][0], rmap_[0][1], CV_INTER_LINEAR);
-	//for (auto& triangle : triangles) {
-		//cv::circle(rimg, )
-	//}
-	//imwrite("resources/camera-left/osl-color-seq-albedo (1024x683)-rectified.jpg", rimg);
+	cv::Mat img = imread("resources/camera-left/osl-color-seq-1 (1024x683).jpg"), rimg;
+	remap(img, rimg, rmap_[0][0], rmap_[0][1], CV_INTER_LINEAR);
+	imwrite("resources/camera-left/osl-color-seq-1 (1024x683)-rectified.jpg", rimg);
 
 	//img = imread("resources/camera-right/osl-color-seq-albedo (1024x683).jpg");
 	//remap(img, rimg, rmap_[1][0], rmap_[1][1], CV_INTER_LINEAR);
 	//imwrite("resources/camera-right/osl-color-seq-albedo (1024x683)-rectified.jpg", rimg);
     // left projection matrix, so using left image
     //tdogl::Bitmap bmp3 = tdogl::Bitmap::bitmapFromFile("resources/camera-left/osl-color-seq-albedo (1024x683)-rectified.jpg");
-    tdogl::Bitmap bmp3 = tdogl::Bitmap::bitmapFromFile("resources/camera-left/osl-color-seq-1 (1024x683).jpg");
-    bmp3.flipVertically();
+    tdogl::Bitmap bmp3 = tdogl::Bitmap::bitmapFromFile("resources/camera-left/osl-color-seq-1 (1024x683)-rectified.jpg");
+    //bmp3.flipVertically();
     gTex = new tdogl::Texture(bmp3);
 
 }

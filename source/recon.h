@@ -64,6 +64,11 @@ private:
 		std::unordered_map<int, std::unordered_map< int, std::vector<UniqueColorPair> > >& unique_colors_right,
 		std::vector <glm::dvec2>& img_pts1, std::vector <glm::dvec2>& img_pts2);
 	void init_imgs(std::vector<cv::Mat>& calibImgs, std::vector<std::string> img_filenames, std::string albedo_filename, bool is_left);
+
+	void get_unique_edges(const std::vector<cv::Mat>& calibImgs,
+		std::unordered_map<int, std::unordered_map< int, std::vector<UniqueColorPair> > >& unique_colors_per_image,
+		bool is_right);
+	cv::Size image_size_;
     
 public:
 	void compute_correlation(std::vector <glm::dvec2>& img_pts1, std::vector <glm::dvec2>& img_pts2);
