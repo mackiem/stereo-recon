@@ -100,9 +100,9 @@ void Recon::calibrate() {
 		image_size_ = imageSize;
 
 		bool found;
-		found = findChessboardCorners(view, board_size, point_buf);
-		//,
-		//	CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_NORMALIZE_IMAGE);
+		found = findChessboardCorners(view, board_size, point_buf
+		,
+			CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_NORMALIZE_IMAGE);
 
 		cv::cvtColor(view, viewGray, COLOR_BGR2GRAY);
 		cornerSubPix(viewGray, point_buf, Size(11, 11),
@@ -176,9 +176,10 @@ void Recon::calibrate() {
 		//CV_CALIB_FIX_INTRINSIC +
         //CV_CALIB_FIX_FOCAL_LENGTH + 
 		CV_CALIB_FIX_ASPECT_RATIO +
-		//CV_CALIB_ZERO_TANGENT_DIST +
-		CV_CALIB_RATIONAL_MODEL
-		);
+		CV_CALIB_ZERO_TANGENT_DIST +
+		CV_CALIB_RATIONAL_MODEL +
+        CV_CALIB_FIX_K3 + CV_CALIB_FIX_K4 + 
+		CV_CALIB_FIX_K5);
 	std::cout << "done with RMS error=" << rms << std::endl;
 
 	// CALIBRATION QUALITY CHECK
@@ -467,7 +468,7 @@ void Recon::get_unique_edges(const std::vector<cv::Mat>& calibImgs,
 
 		// mean shift segmentation
 		//spatialRad = 10;
-		long long l = 7;
+		long long l = mean_segmentation_color_threshold_ = 16;
 		spatialRad = 10;
 		color_rad = 5; // whiteboard
 		color_rad = 16; // buddha
@@ -536,7 +537,7 @@ void Recon::get_unique_edges(const std::vector<cv::Mat>& calibImgs,
 			std::vector<UniqueColorPair> unique_color_pairs;
 			for (auto col = 0; col < edges.cols; ++col) {
 				bool is_in = true;
-				is_in = (row >= 200 && row <= 250);
+				is_in = (row >= 300 && row <= 500);
 				if (gray_edges.at<uchar>(row, col) > 0 && is_in) {
 					cv::Vec3i pre_color(0);
 					cv::Vec3i post_color(0);
@@ -630,7 +631,7 @@ void Recon::compute_correlation_per_image(std::unordered_map<int, std::unordered
 
 	const unsigned color_threshold = 10;
 
-	long long l = 7;
+	long long l = mean_segmentation_color_threshold_;
 	std::string left_right_suffix = "-L";
 	std::string flood_fill_filename = std::string("flood-fill-").append(std::to_string(l)).append(left_right_suffix).append(".png");
 	cv::Mat flood_fill_img = cv::imread(flood_fill_filename);
@@ -650,43 +651,53 @@ void Recon::compute_correlation_per_image(std::unordered_map<int, std::unordered
 				auto& rows_right = unique_colors_right[img_no];
 				if (rows_right.find(row_no_right) != rows_right.end()) {
 					auto& color_vector_right = rows_right[row_no_right];
+					//int no_of_color_matches = 0;
+					std::vector<glm::dvec2> color_match_img_pts;
 					for (auto j = 0u; j < color_vector_right.size(); ++j) {
 						unsigned int col_right =  color_vector_right[j].first;
 
                         // proceed only if in vroi
-						//if (validRoi_[0].contains(Point2i(col_left, 683 - row_no_left))
-						//	&& validRoi_[1].contains(Point2i(col_right, 683 - row_no_right))) {
+						if (validRoi_[0].contains(Point2i(col_left, row_no_left))
+							&& validRoi_[1].contains(Point2i(col_right, row_no_right))) {
 
 							auto& color_pair_right = color_vector_right[j].second;
-							cv::Vec3i first_diff_color;
-							cv::Vec3i second_diff_color;
-							cv::absdiff(color_pair_left.first, color_pair_right.first, first_diff_color);
-							cv::absdiff(color_pair_left.second, color_pair_right.second, second_diff_color);
-							bool color_match = true;
-							for (auto k = 0u; k < 3; ++k) {
-								if ((first_diff_color[k] > color_threshold)
-									&& (second_diff_color[k] > color_threshold)){
-									color_match = false;
-								}
+							bool color_match = false;
+							//cv::Vec3i first_diff_color;
+							//cv::Vec3i second_diff_color;
+							//cv::absdiff(color_pair_left.first, color_pair_right.first, first_diff_color);
+							//cv::absdiff(color_pair_left.second, color_pair_right.second, second_diff_color);
+							//for (auto k = 0u; k < 3; ++k) {
+							//	if ((first_diff_color[k] > color_threshold)
+							//		&& (second_diff_color[k] > color_threshold)){
+							//		color_match = false;
+							//	}
+							//}
+
+							double diff = cv::norm(color_pair_left.first, color_pair_right.first, CV_L2);
+							if (diff < color_threshold) {
+								color_match = true;
+								color_match_img_pts.push_back(glm::dvec2(col_right, row_no_right));
 							}
-							if (color_match) {
-								std::vector<int> points;
-								img_pts1.push_back(glm::dvec2(col_left, row_no_left));
-								int w = flood_fill_img.cols;
+						}
+					}
 
-								int thickness = 0;
-								int lineType = 8;
+                    // if we have more than one match, this means the unique colors are not distinguishable enough
+                    // so, good point pairs only have 1 match
+					if (color_match_img_pts.size() == 1) {
+						img_pts1.push_back(glm::dvec2(col_left, row_no_left));
+						int w = flood_fill_img.cols;
 
-								cv::circle(flood_fill_img,
-									cv::Point(col_left, row_no_left),
-									w / (32.0 * 8.0),
-									cv::Scalar(0, 255, 0),
-									thickness,
-									lineType);
+						int thickness = 0;
+						int lineType = 8;
 
-								img_pts2.push_back(glm::dvec2(col_right, row_no_right));
-							}
-						//}
+						cv::circle(flood_fill_img,
+							cv::Point(col_left, row_no_left),
+							w / (32.0 * 8.0),
+							cv::Scalar(0, 255, 0),
+							thickness,
+							lineType);
+
+						img_pts2.push_back(glm::dvec2(color_match_img_pts[0][0], color_match_img_pts[0][1]));
 					}
 				}
 			}
@@ -1255,7 +1266,7 @@ void Recon::draw() {
 	glEnableVertexAttribArray(gProgram->attrib("vertTexCoord"));
 	glVertexAttribPointer(gProgram->attrib("vertTexCoord"), 2, GL_FLOAT, GL_FALSE, 0, 0);
 
-	gProgram->setUniform("model", glm::scale(glm::rotate(glm::mat4(1.f), rotate_angle++, glm::vec3(1.f, 0.f, 0.f)), glm::vec3(-0.005f, 0.005f, 0.005f)));
+	gProgram->setUniform("model", glm::scale(glm::rotate(glm::mat4(1.f), rotate_angle++, glm::vec3(0.f, 1.f, 0.f)), glm::vec3(-0.01f, 0.01f, 0.01f)));
 
 		glBindTexture(GL_TEXTURE_2D, gTex->object());
 		gProgram->setUniform("tex", 0); //set to 0 because the texture is bound to GL_TEXTURE0

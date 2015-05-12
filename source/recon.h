@@ -32,6 +32,7 @@ typedef std::pair<int, std::pair<cv::Vec3i, cv::Vec3i> > UniqueColorPair;
 class Recon
 {
 private:
+	int mean_segmentation_color_threshold_;
 	cv::Rect validRoi_[2];
 	cv::Mat rmap_[2][2];
 
